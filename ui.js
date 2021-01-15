@@ -221,21 +221,16 @@ $(async function() {
 		$submitForm.show();
 	});
 
-	$('body').on('click', '#submit-form', function() {
+	//event handler for submitting article
+	$('body').on('submit', '#submit-form', async function(event) {
 		event.preventDefault();
 		console.log($submitForm);
-
-		const storyObj = {
+		const username = localStorage.getItem('username');
+		const gatherInfo = {
 			author: $submitForm[0][0].value,
 			title: $submitForm[0][1].value,
-			url: $submitForm[0][2].value,
-			username: localStorage.getItem('username'),
-			storyId: 'Unsure',
-			createdAt: 'Unsure',
-			updatedAt: 'Unsure'
+			url: $submitForm[0][2].value
 		};
-
-		console.log(storyObj);
-		const newStory = new Story();
+		const storyObject = await addStory(username, gatherInfo);
 	});
 });
