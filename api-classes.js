@@ -55,7 +55,7 @@ class StoryList {
 				story: newStory
 			}
 		});
-		console.log(response);
+		return response;
 	}
 }
 
@@ -120,6 +120,7 @@ class User {
 
 		// build a new User instance from the API response
 		const existingUser = new User(response.data.user);
+		console.log(existingUser);
 
 		// instantiate Story instances for the user's favorites and ownStories
 		existingUser.favorites = response.data.user.favorites.map((s) => new Story(s));
@@ -158,6 +159,25 @@ class User {
 		existingUser.favorites = response.data.user.favorites.map((s) => new Story(s));
 		existingUser.ownStories = response.data.user.stories.map((s) => new Story(s));
 		return existingUser;
+	}
+
+	async addFavorite(storyId) {
+		console.log(this.username);
+		console.log(this.loginToken);
+		const response = await axios({
+			url: `${BASE_URL}/users/${this.username}/favorites${storyId}`,
+			method: 'POST',
+			data: {
+				token: this.loginToken
+			}
+		});
+		console.log(response);
+	}
+	async removeFavorite(storyId) {
+		const response = await axios.delete(`${BASE_URL}/users/${this.username}/favorites${storyId}`, {
+			token: this.loginToken
+		});
+		console.log(response);
 	}
 }
 

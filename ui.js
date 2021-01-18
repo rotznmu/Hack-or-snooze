@@ -8,6 +8,7 @@ $(async function() {
 	const $ownStories = $('#my-articles');
 	const $navLogin = $('#nav-login');
 	const $navLogOut = $('#nav-logout');
+	const $navUserProfile = $('#nav-welcome');
 
 	// global storyList variable
 	let storyList = null;
@@ -156,10 +157,15 @@ $(async function() {
 
 	function generateStoryHTML(story) {
 		let hostName = getHostName(story.url);
+		//let starType = isFavorite(story) ? 'fas' : 'far';
+		let starType = 'far';
 
 		// render story markup
 		const storyMarkup = $(`
-      <li id="${story.storyId}">
+	  <li id="${story.storyId}">
+		<span class="star">
+			<i class="${starType} fa-star"></i>
+		</span>
         <a class="article-link" href="${story.url}" target="a_blank">
           <strong>${story.title}</strong>
         </a>
@@ -188,6 +194,8 @@ $(async function() {
 
 	function showNavForLoggedInUser() {
 		$navLogin.hide();
+		$navUserProfile.text(currentUser.username);
+		$navUserProfile.show();
 		$navLogOut.show();
 	}
 
@@ -217,20 +225,36 @@ $(async function() {
 
 	//event handler for submit button
 	$('body').on('click', '#nav-submit', function() {
-		console.log(this);
 		$submitForm.show();
 	});
 
 	//event handler for submitting article
 	$('body').on('submit', '#submit-form', async function(event) {
 		event.preventDefault();
-		console.log($submitForm);
-		const username = localStorage.getItem('username');
+		const username = currentUser.username;
 		const gatherInfo = {
 			author: $submitForm[0][0].value,
 			title: $submitForm[0][1].value,
-			url: $submitForm[0][2].value
+			url: $submitForm[0][2].value,
+			username
 		};
-		const storyObject = await addStory(username, gatherInfo);
+		const storyObject = await storyList.addStory(currentUser, gatherInfo);
+	});
+	$('.articles-container').on('click', '.star', async function(e) {
+		e.preventDefault();
+		const evtTarget = e.target;
+		console.log(evtTarget.parentElement.parentElement.id);
+		const storyId = evtTarget.parentElement.parentElement.id;
+		//add some logic to determine if the favorite star is already selected and then change the star as needed and then use one of two functions that i will create outside of this event listener, addFavorite or removeFavorite, using storyID, which I should also create so it retreives the ID from the story.
+		if (evtTarget.classList.contains('far')) {
+			evtTarget.classList.remove('far');
+			evtTarget.classList.add('fas');
+			//either create a new function or try to add to syncCurrentUserToLocalStorage
+			await currentUser.addFavorite(storyId);
+			//make a post request to add to favorites
+		} else if (evtTarget.classList.contains('fas')) {
+			evtTarget.classList.remove('fas');
+			evtTarget.classList.add('far');
+		}
 	});
 });
