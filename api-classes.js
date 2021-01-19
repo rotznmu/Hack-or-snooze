@@ -162,22 +162,22 @@ class User {
 	}
 
 	async addFavorite(storyId) {
-		console.log(this.username);
-		console.log(this.loginToken);
-		const response = await axios({
-			url: `${BASE_URL}/users/${this.username}/favorites${storyId}`,
+		await axios({
+			url: `${BASE_URL}/users/${this.username}/favorites/${storyId}`,
 			method: 'POST',
 			data: {
 				token: this.loginToken
 			}
 		});
-		console.log(response);
 	}
 	async removeFavorite(storyId) {
-		const response = await axios.delete(`${BASE_URL}/users/${this.username}/favorites${storyId}`, {
-			token: this.loginToken
+		const response = await axios({
+			url: `${BASE_URL}/users/${this.username}/favorites/${storyId}`,
+			method: 'DELETE',
+			data: {
+				token: this.loginToken
+			}
 		});
-		console.log(response);
 	}
 }
 

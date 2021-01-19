@@ -157,8 +157,12 @@ $(async function() {
 
 	function generateStoryHTML(story) {
 		let hostName = getHostName(story.url);
-		//let starType = isFavorite(story) ? 'fas' : 'far';
-		let starType = 'far';
+		console.log(currentUser);
+		if (currentUser === null) {
+			let starType = 'far';
+		} else {
+			let starType = isFavorite(currentUser.favorites, story.storyId) ? 'fas' : 'far';
+		}
 
 		// render story markup
 		const storyMarkup = $(`
@@ -178,6 +182,11 @@ $(async function() {
 		return storyMarkup;
 	}
 
+	function isFavorite(arr, val) {
+		return arr.some(function(arrVal) {
+			return val === arrVal.storyId;
+		});
+	}
 	/* hide all elements in elementsArr */
 
 	function hideElements() {
@@ -243,7 +252,6 @@ $(async function() {
 	$('.articles-container').on('click', '.star', async function(e) {
 		e.preventDefault();
 		const evtTarget = e.target;
-		console.log(evtTarget.parentElement.parentElement.id);
 		const storyId = evtTarget.parentElement.parentElement.id;
 		//add some logic to determine if the favorite star is already selected and then change the star as needed and then use one of two functions that i will create outside of this event listener, addFavorite or removeFavorite, using storyID, which I should also create so it retreives the ID from the story.
 		if (evtTarget.classList.contains('far')) {
@@ -255,6 +263,7 @@ $(async function() {
 		} else if (evtTarget.classList.contains('fas')) {
 			evtTarget.classList.remove('fas');
 			evtTarget.classList.add('far');
+			await currentUser.removeFavorite(storyId);
 		}
 	});
 });
