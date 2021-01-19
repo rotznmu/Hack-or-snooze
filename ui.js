@@ -9,6 +9,7 @@ $(async function() {
 	const $navLogin = $('#nav-login');
 	const $navLogOut = $('#nav-logout');
 	const $navUserProfile = $('#nav-welcome');
+	const $favoritesList = $('#favorited-articles');
 
 	// global storyList variable
 	let storyList = null;
@@ -124,6 +125,8 @@ $(async function() {
 		$loginForm.trigger('reset');
 		$createAccountForm.trigger('reset');
 
+		//HAD TO ADD THIS IN SO THAT FAVORITES WOULD BE MARKED ON ALLSTORIESLIST UPON LOGIN
+		generateStories();
 		// show the stories
 		$allStoriesList.show();
 
@@ -143,7 +146,6 @@ $(async function() {
 		storyList = storyListInstance;
 		// empty out that part of the page
 		$allStoriesList.empty();
-
 		// loop through all of our stories and generate HTML for them
 		for (let story of storyList.stories) {
 			const result = generateStoryHTML(story);
@@ -157,11 +159,11 @@ $(async function() {
 
 	function generateStoryHTML(story) {
 		let hostName = getHostName(story.url);
-		console.log(currentUser);
+		let starType;
 		if (currentUser === null) {
-			let starType = 'far';
+			starType = 'far';
 		} else {
-			let starType = isFavorite(currentUser.favorites, story.storyId) ? 'fas' : 'far';
+			starType = isFavorite(currentUser.favorites, story.storyId) ? 'fas' : 'far';
 		}
 
 		// render story markup
@@ -196,7 +198,8 @@ $(async function() {
 			$filteredArticles,
 			$ownStories,
 			$loginForm,
-			$createAccountForm
+			$createAccountForm,
+			$favoritesList
 		];
 		elementsArr.forEach(($elem) => $elem.hide());
 	}
@@ -249,6 +252,39 @@ $(async function() {
 		};
 		const storyObject = await storyList.addStory(currentUser, gatherInfo);
 	});
+
+	//event handler for favorites tab
+	$('body').on('click', '#nav-favorites', function() {
+		console.log('favorites selected');
+		console.log(currentUser.favorites);
+		console.log($favoritesList);
+		$favoritesList.empty();
+		hideElements();
+		generateFavoritesList();
+		$favoritesList.show();
+	});
+
+	async function generateFavoritesList() {
+		// get an instance of StoryList
+		const storyListInstance = await StoryList.getStories();
+		// update our global variable
+		storyList = storyListInstance;
+		console.log(storyList);
+		// empty out that part of the page
+		$allStoriesList.empty();
+		// loop through all of our stories and generate HTML for them
+		for (let story of storyList.stories) {
+			if (isFavorite(currentUser.favorites, story.storyId)) {
+				console.log('True');
+				const result = generateStoryHTML(story);
+				$favoritesList.append(result);
+			} else {
+				console.log(false);
+			}
+		}
+	}
+
+	//to star favorite articles
 	$('.articles-container').on('click', '.star', async function(e) {
 		e.preventDefault();
 		const evtTarget = e.target;
