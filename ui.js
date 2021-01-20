@@ -163,14 +163,21 @@ $(async function() {
 		if (currentUser === null) {
 			starType = 'far';
 		} else {
-			starType = isFavorite(currentUser.favorites, story.storyId) ? 'fas' : 'far';
+			starType = isType(currentUser.favorites, story.storyId) ? 'fas' : 'far';
 		}
 
+		let addTrashcan = '';
+		if (isType(currentUser.ownStories, story.storyId)) {
+			addTrashcan = 'fa fa-trash';
+		}
 		// render story markup
 		const storyMarkup = $(`
 	  <li id="${story.storyId}">
 		<span class="star">
 			<i class="${starType} fa-star"></i>
+		</span>
+		<span class="trash-can">
+			<i class="${addTrashcan}"></i>
 		</span>
         <a class="article-link" href="${story.url}" target="a_blank">
           <strong>${story.title}</strong>
@@ -184,7 +191,7 @@ $(async function() {
 		return storyMarkup;
 	}
 
-	function isFavorite(arr, val) {
+	function isType(arr, val) {
 		return arr.some(function(arrVal) {
 			return val === arrVal.storyId;
 		});
@@ -235,7 +242,7 @@ $(async function() {
 		}
 	}
 
-	//event handler for submit button
+	//event handler for submit tab
 	$('body').on('click', '#nav-submit', function() {
 		$submitForm.show();
 	});
@@ -251,13 +258,43 @@ $(async function() {
 			username
 		};
 		const storyObject = await storyList.addStory(currentUser, gatherInfo);
+		console.log(storyObject.data.story.storyId);
+		hideElements();
+		await currentUser.retrieveDetails();
+		await generateStories();
+		$allStoriesList.show();
 	});
+
+	//event handler for my stories tab
+	$('body').on('click', '#nav-my-stories', function() {
+		$ownStories.empty();
+		hideElements();
+		generateMyStoriesList();
+		$ownStories.show();
+	});
+
+	//
+	async function generateMyStoriesList() {
+		// get an instance of StoryList
+		const storyListInstance = await StoryList.getStories();
+		// update our global variable
+		storyList = storyListInstance;
+
+		// empty out that part of the page
+		$allStoriesList.empty();
+		// loop through all of our stories and generate HTML for them
+		for (let story of storyList.stories) {
+			if (isType(currentUser.ownStories, story.storyId)) {
+				const result = generateStoryHTML(story);
+				$ownStories.append(result);
+			}
+		}
+		//retrieve new details
+		await currentUser.retrieveDetails();
+	}
 
 	//event handler for favorites tab
 	$('body').on('click', '#nav-favorites', function() {
-		console.log('favorites selected');
-		console.log(currentUser.favorites);
-		console.log($favoritesList);
 		$favoritesList.empty();
 		hideElements();
 		generateFavoritesList();
@@ -269,17 +306,14 @@ $(async function() {
 		const storyListInstance = await StoryList.getStories();
 		// update our global variable
 		storyList = storyListInstance;
-		console.log(storyList);
 		// empty out that part of the page
 		$allStoriesList.empty();
 		// loop through all of our stories and generate HTML for them
 		for (let story of storyList.stories) {
-			if (isFavorite(currentUser.favorites, story.storyId)) {
-				console.log('True');
+			if (isType(currentUser.favorites, story.storyId)) {
 				const result = generateStoryHTML(story);
 				$favoritesList.append(result);
 			} else {
-				console.log(false);
 			}
 		}
 	}
@@ -300,6 +334,23 @@ $(async function() {
 			evtTarget.classList.remove('fas');
 			evtTarget.classList.add('far');
 			await currentUser.removeFavorite(storyId);
+		}
+	});
+	//to delete my stories
+	$('.articles-container').on('click', '.trash-can', async function(e) {
+		e.preventDefault();
+		const evtTarget = e.target;
+		const storyId = evtTarget.parentElement.parentElement.id;
+		const confirmButton = confirm('Would you like to delete your story?');
+		if (confirmButton === true) {
+			await currentUser.removeMyStory(storyId);
+		}
+		//retrieve new details
+		await currentUser.retrieveDetails();
+		await generateStories();
+		if (e.target.parentElement.parentElement.parentElement.id === 'my-articles') {
+			$ownStories.empty();
+			generateMyStoriesList();
 		}
 	});
 });

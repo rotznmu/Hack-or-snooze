@@ -25,8 +25,13 @@ class StoryList {
 
 	static async getStories() {
 		// query the /stories endpoint (no auth required)
-		const response = await axios.get(`${BASE_URL}/stories`);
-
+		const response = await axios.get(`${BASE_URL}/stories?`, {
+			params: {
+				skip: 0,
+				limit: 25
+			}
+		});
+		console.log(response);
 		// turn the plain old story objects from the API into instances of the Story class
 		const stories = response.data.stories.map((story) => new Story(story));
 
@@ -120,7 +125,6 @@ class User {
 
 		// build a new User instance from the API response
 		const existingUser = new User(response.data.user);
-		console.log(existingUser);
 
 		// instantiate Story instances for the user's favorites and ownStories
 		existingUser.favorites = response.data.user.favorites.map((s) => new Story(s));
@@ -161,6 +165,25 @@ class User {
 		return existingUser;
 	}
 
+	async retrieveDetails() {
+		const response = await axios.get(`${BASE_URL}/users/${this.username}`, {
+			params: {
+				token: this.loginToken
+			}
+		});
+
+		// update all of the user's properties from the API response
+		this.name = response.data.user.name;
+		this.createdAt = response.data.user.createdAt;
+		this.updatedAt = response.data.user.updatedAt;
+
+		// remember to convert the user's favorites and ownStories into instances of Story
+		this.favorites = response.data.user.favorites.map((s) => new Story(s));
+		this.ownStories = response.data.user.stories.map((s) => new Story(s));
+
+		return this;
+	}
+
 	async addFavorite(storyId) {
 		await axios({
 			url: `${BASE_URL}/users/${this.username}/favorites/${storyId}`,
@@ -169,6 +192,7 @@ class User {
 				token: this.loginToken
 			}
 		});
+		await this.retrieveDetails();
 	}
 	async removeFavorite(storyId) {
 		const response = await axios({
@@ -178,6 +202,17 @@ class User {
 				token: this.loginToken
 			}
 		});
+		await this.retrieveDetails();
+	}
+	async removeMyStory(storyId) {
+		const response = await axios({
+			url: `${BASE_URL}/stories/${storyId}`,
+			method: 'DELETE',
+			data: {
+				token: this.loginToken
+			}
+		});
+		await this.retrieveDetails();
 	}
 }
 

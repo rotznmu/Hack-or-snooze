@@ -46,6 +46,12 @@ nav {
 	margin: 0 15px;
 }
 
+#nav-logout {
+	margin-left: 0%;
+	font-size: 0.7rem;
+	vertical-align: sub;
+}
+
 .nav-link {
 	font-size: 0.85rem;
 	margin: 0 3px;
@@ -54,6 +60,7 @@ nav {
 .nav-right {
 	margin-left: auto;
 	text-align: right;
+	font-size: 0.9rem;
 }
 
 .container {
@@ -149,6 +156,10 @@ form > hr {
 	font-size: 0.75rem;
 	margin: 0 2px;
 	cursor: pointer;
+}
+
+.star:hover {
+	color: gold;
 }
 
 .trash-can:hover {
