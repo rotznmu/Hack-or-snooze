@@ -47,6 +47,33 @@
       <button type="submit">submit</button>
       <hr>
     </form>
+    <article id="user-profile" class="hidden">
+      <h4>User Profile Info</h4>
+      <section>
+        <div id="profile-name">Name:</div>
+        <div id="profile-username">Username:</div>
+        <div id="profile-account-date">Account Created:</div>
+      </section>
+      <form action="" class="" id="profile-change">
+        <h4>Change Name</h4>
+          <div>
+            <input id="change-name" type="text" placeholder="Enter New Name">
+          </div>
+          <div>
+            <button type="submit" id="change-name-button">submit</button>
+          </div>
+        <h4>Change Password</h4>      
+        <div>
+          <input id="new-pass" type="password" placeholder="New Password">
+        </div>        
+        <div>
+          <input id="repeat-pass" type="password" placeholder="Repeat New Password">
+        </div>
+        <div>
+          <button type="submit" id="change-pass-button">submit</button>
+        </div>
+      </form>
+    </article>    
     <article>
       <ol id="all-articles-list" class="articles-list">
         <h3>Loading...</h3>
@@ -106,14 +133,7 @@
       <button type="submit">create account</button>
     </form>
   </section>
-  <section id="user-profile" class="container hidden">
-    <h4>User Profile Info</h4>
-    <section>
-      <div id="profile-name">Name:</div>
-      <div id="profile-username">Username:</div>
-      <div id="profile-account-date">Account Created:</div>
-    </section>
-  </section>
+
 </body>
 <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
   crossorigin="anonymous"></script>

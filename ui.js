@@ -1,5 +1,4 @@
 $(async function() {
-	// cache some selectors we'll be using quite a bit
 	const $allStoriesList = $('#all-articles-list');
 	const $submitForm = $('#submit-form');
 	const $filteredArticles = $('#filtered-articles');
@@ -10,100 +9,58 @@ $(async function() {
 	const $navLogOut = $('#nav-logout');
 	const $navUserProfile = $('#nav-welcome');
 	const $favoritesList = $('#favorited-articles');
+	const $profileName = $('#profile-name');
+	const $profileUsername = $('#profile-username');
+	const $profileAccountDate = $('#profile-account-date');
+	const $userProfile = $('#user-profile');
 
-	// global storyList variable
 	let storyList = null;
 
-	// global currentUser variable
 	let currentUser = null;
 
 	await checkIfLoggedIn();
 
-	/**
-   * Event listener for logging in.
-   *  If successfully we will setup the user instance
-   */
-
 	$loginForm.on('submit', async function(evt) {
-		evt.preventDefault(); // no page-refresh on submit
-
-		// grab the username and password
+		evt.preventDefault();
 		const username = $('#login-username').val();
 		const password = $('#login-password').val();
-
-		// call the login static method to build a user instance
 		const userInstance = await User.login(username, password);
-		// set the global user to the user instance
 		currentUser = userInstance;
 		syncCurrentUserToLocalStorage();
 		loginAndSubmitForm();
 	});
 
-	/**
-   * Event listener for signing up.
-   *  If successfully we will setup a new user instance
-   */
-
 	$createAccountForm.on('submit', async function(evt) {
-		evt.preventDefault(); // no page refresh
-
-		// grab the required fields
+		evt.preventDefault();
 		let name = $('#create-account-name').val();
 		let username = $('#create-account-username').val();
 		let password = $('#create-account-password').val();
-
-		// call the create method, which calls the API and then builds a new user instance
 		const newUser = await User.create(username, password, name);
 		currentUser = newUser;
 		syncCurrentUserToLocalStorage();
 		loginAndSubmitForm();
 	});
 
-	/**
-   * Log Out Functionality
-   */
-
 	$navLogOut.on('click', function() {
-		// empty out local storage
 		localStorage.clear();
-		// refresh the page, clearing memory
 		location.reload();
 	});
 
-	/**
-   * Event Handler for Clicking Login
-   */
-
 	$navLogin.on('click', function() {
-		// Show the Login and Create Account Forms
 		$loginForm.slideToggle();
 		$createAccountForm.slideToggle();
 		$allStoriesList.toggle();
 	});
 
-	/**
-   * Event handler for Navigation to Homepage
-   */
-
 	$('body').on('click', '#nav-all', async function() {
 		hideElements();
 		await generateStories();
-		$allStoriesList.show();
+		$allStoriesList.slideDown('fast', function() {});
 	});
 
-	/**
-   * On page load, checks local storage to see if the user is already logged in.
-   * Renders page information accordingly.
-   */
-
 	async function checkIfLoggedIn() {
-		// let's see if we're logged in
 		const token = localStorage.getItem('token');
 		const username = localStorage.getItem('username');
-
-		// if there is a token in localStorage, call User.getLoggedInUser
-		//  to get an instance of User with the right details
-		//  this is designed to run once, on page load
 		currentUser = await User.getLoggedInUser(token, username);
 		await generateStories();
 
@@ -112,65 +69,38 @@ $(async function() {
 		}
 	}
 
-	/**
-   * A rendering function to run to reset the forms and hide the login info
-   */
-
 	function loginAndSubmitForm() {
-		// hide the forms for logging in and signing up
 		$loginForm.hide();
 		$createAccountForm.hide();
-
-		// reset those forms
 		$loginForm.trigger('reset');
 		$createAccountForm.trigger('reset');
-
-		//HAD TO ADD THIS IN SO THAT FAVORITES WOULD BE MARKED ON ALLSTORIESLIST UPON LOGIN
 		generateStories();
-		// show the stories
 		$allStoriesList.show();
-
-		// update the navigation bar
 		showNavForLoggedInUser();
 	}
 
-	/**
-   * A rendering function to call the StoryList.getStories static method,
-   *  which will generate a storyListInstance. Then render it.
-   */
-
 	async function generateStories() {
-		// get an instance of StoryList
 		const storyListInstance = await StoryList.getStories();
-		// update our global variable
 		storyList = storyListInstance;
-		// empty out that part of the page
 		$allStoriesList.empty();
-		// loop through all of our stories and generate HTML for them
 		for (let story of storyList.stories) {
 			const result = generateStoryHTML(story);
 			$allStoriesList.append(result);
 		}
 	}
 
-	/**
-   * A function to render HTML for an individual Story instance
-   */
-
 	function generateStoryHTML(story) {
 		let hostName = getHostName(story.url);
 		let starType;
+		let addTrashcan;
 		if (currentUser === null) {
 			starType = 'far';
 		} else {
 			starType = isType(currentUser.favorites, story.storyId) ? 'fas' : 'far';
+			if (isType(currentUser.ownStories, story.storyId)) {
+				addTrashcan = 'fa fa-trash';
+			}
 		}
-
-		let addTrashcan = '';
-		if (isType(currentUser.ownStories, story.storyId)) {
-			addTrashcan = 'fa fa-trash';
-		}
-		// render story markup
 		const storyMarkup = $(`
 	  <li id="${story.storyId}">
 		<span class="star">
@@ -196,7 +126,6 @@ $(async function() {
 			return val === arrVal.storyId;
 		});
 	}
-	/* hide all elements in elementsArr */
 
 	function hideElements() {
 		const elementsArr = [
@@ -206,7 +135,8 @@ $(async function() {
 			$ownStories,
 			$loginForm,
 			$createAccountForm,
-			$favoritesList
+			$favoritesList,
+			$userProfile
 		];
 		elementsArr.forEach(($elem) => $elem.hide());
 	}
@@ -217,8 +147,6 @@ $(async function() {
 		$navUserProfile.show();
 		$navLogOut.show();
 	}
-
-	/* simple function to pull the hostname from a URL */
 
 	function getHostName(url) {
 		let hostName;
@@ -233,8 +161,6 @@ $(async function() {
 		return hostName;
 	}
 
-	/* sync current user information to localStorage */
-
 	function syncCurrentUserToLocalStorage() {
 		if (currentUser) {
 			localStorage.setItem('token', currentUser.loginToken);
@@ -242,12 +168,61 @@ $(async function() {
 		}
 	}
 
-	//event handler for submit tab
-	$('body').on('click', '#nav-submit', function() {
-		$submitForm.show();
+	$('body').on('click', '#nav-welcome', function(e) {
+		hideElements();
+		$userProfile.slideDown('fast', function() {});
+		$profileName.text(`Name: ${currentUser.name}`);
+		$profileUsername.text(`Username: ${currentUser.username}`);
+		$profileAccountDate.text(`Account Created: ${currentUser.createdAt}`);
 	});
 
-	//event handler for submitting article
+	$('body').on('click', '#change-name-button', async function(e) {
+		const newNameInput = $('#change-name').val();
+		const tester = await currentUser.changeName(newNameInput);
+		await currentUser.retrieveDetails();
+		$profileName.text(`Name: ${currentUser.name}`);
+		$('#change-name').val('');
+		const addSuccessTarget = e.target.parentElement;
+		console.log(addSuccessTarget);
+		const addSuccess = document.createElement('span');
+		addSuccess.setAttribute('id', 'temp-success-msg');
+		addSuccess.setAttribute('display', 'inline-block');
+		addSuccess.innerText = 'Name Changed Successfully';
+		addSuccessTarget.appendChild(addSuccess);
+		const $success = $('#temp-success-msg');
+		$success.fadeOut(3000, 'swing', removeSuccess);
+	});
+
+	$('body').on('click', '#change-pass-button', async function(e) {
+		console.log('clicked!');
+		let newPass = $('#new-pass').val();
+		let repeatPass = $('#repeat-pass').val();
+		if (newPass === repeatPass) {
+			await currentUser.retrieveDetails();
+			$('#new-pass').val('');
+			$('#repeat-pass').val('');
+			const addSuccessTarget = e.target.parentElement;
+			const addSuccess = document.createElement('span');
+			addSuccess.setAttribute('id', 'temp-success-msg');
+			addSuccess.innerText = 'Password Changed Successfully';
+			addSuccessTarget.appendChild(addSuccess);
+			const $success = $('#temp-success-msg');
+			$success.fadeOut(3000, 'swing', removeSuccess);
+		} else {
+			alert('Passwords Do Not Match!');
+		}
+	});
+
+	function removeSuccess() {
+		const findSuccessMsg = document.getElementById('temp-success-msg');
+		findSuccessMsg.remove();
+	}
+
+	$('body').on('click', '#nav-submit', function() {
+		hideElements();
+		$submitForm.slideDown('fast', function() {});
+	});
+
 	$('body').on('submit', '#submit-form', async function(event) {
 		event.preventDefault();
 		const username = currentUser.username;
@@ -265,50 +240,38 @@ $(async function() {
 		$allStoriesList.show();
 	});
 
-	//event handler for my stories tab
 	$('body').on('click', '#nav-my-stories', function() {
 		$ownStories.empty();
 		hideElements();
 		generateMyStoriesList();
-		$ownStories.show();
+		$ownStories.slideDown('fast', function() {});
 	});
 
 	//
 	async function generateMyStoriesList() {
-		// get an instance of StoryList
 		const storyListInstance = await StoryList.getStories();
-		// update our global variable
 		storyList = storyListInstance;
-
-		// empty out that part of the page
 		$allStoriesList.empty();
-		// loop through all of our stories and generate HTML for them
 		for (let story of storyList.stories) {
 			if (isType(currentUser.ownStories, story.storyId)) {
 				const result = generateStoryHTML(story);
 				$ownStories.append(result);
 			}
 		}
-		//retrieve new details
 		await currentUser.retrieveDetails();
 	}
 
-	//event handler for favorites tab
 	$('body').on('click', '#nav-favorites', function() {
 		$favoritesList.empty();
 		hideElements();
 		generateFavoritesList();
-		$favoritesList.show();
+		$favoritesList.slideDown('fast', function() {});
 	});
 
 	async function generateFavoritesList() {
-		// get an instance of StoryList
 		const storyListInstance = await StoryList.getStories();
-		// update our global variable
 		storyList = storyListInstance;
-		// empty out that part of the page
 		$allStoriesList.empty();
-		// loop through all of our stories and generate HTML for them
 		for (let story of storyList.stories) {
 			if (isType(currentUser.favorites, story.storyId)) {
 				const result = generateStoryHTML(story);
@@ -318,25 +281,21 @@ $(async function() {
 		}
 	}
 
-	//to star favorite articles
 	$('.articles-container').on('click', '.star', async function(e) {
 		e.preventDefault();
 		const evtTarget = e.target;
 		const storyId = evtTarget.parentElement.parentElement.id;
-		//add some logic to determine if the favorite star is already selected and then change the star as needed and then use one of two functions that i will create outside of this event listener, addFavorite or removeFavorite, using storyID, which I should also create so it retreives the ID from the story.
 		if (evtTarget.classList.contains('far')) {
 			evtTarget.classList.remove('far');
 			evtTarget.classList.add('fas');
-			//either create a new function or try to add to syncCurrentUserToLocalStorage
 			await currentUser.addFavorite(storyId);
-			//make a post request to add to favorites
 		} else if (evtTarget.classList.contains('fas')) {
 			evtTarget.classList.remove('fas');
 			evtTarget.classList.add('far');
 			await currentUser.removeFavorite(storyId);
 		}
 	});
-	//to delete my stories
+
 	$('.articles-container').on('click', '.trash-can', async function(e) {
 		e.preventDefault();
 		const evtTarget = e.target;
@@ -345,7 +304,6 @@ $(async function() {
 		if (confirmButton === true) {
 			await currentUser.removeMyStory(storyId);
 		}
-		//retrieve new details
 		await currentUser.retrieveDetails();
 		await generateStories();
 		if (e.target.parentElement.parentElement.parentElement.id === 'my-articles') {
